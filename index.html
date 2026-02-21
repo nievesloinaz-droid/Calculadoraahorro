@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Ahorro e Inversión</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f7fa;
+    margin: 0;
+    padding: 20px;
+}
+.container {
+    max-width: 1000px;
+    margin: auto;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+}
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+label {
+    font-size: 14px;
+    margin-bottom: 5px;
+    display: block;
+}
+.section {
+    margin-bottom: 20px;
+}
+canvas {
+    margin-top: 30px;
+}
+.results {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f0f4f8;
+    border-radius: 8px;
+}
+.result-item {
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+@media(max-width: 768px){
+    .grid{
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Calculadora de Ahorro e Inversión</h1>
+
+    <div class="grid">
+        <div class="section">
+            <label>Capital inicial (€)</label>
+            <input type="number" id="capitalInicial" value="10000">
+
+            <label>Edad actual</label>
+            <input type="number" id="edad" value="40">
+
+            <label>Interés anual (%)</label>
+            <input type="number" id="interes" value="5">
+
+            <label>Aportación mensual (€)</label>
+            <input type="number" id="aportacion" value="300">
+        </div>
+
+        <div>
+            <canvas id="pieChart"></canvas>
+        </div>
+    </div>
+
+    <canvas id="lineChart"></canvas>
+
+    <div class="results">
+        <div class="result-item"><strong>Total invertido:</strong> <span id="totalInvertido"></span> €</div>
+        <div class="result-item"><strong>Total ganado en intereses:</strong> <span id="totalIntereses"></span> €</div>
+        <div class="result-item"><strong>Capital final acumulado:</strong> <span id="capitalFinal"></span> €</div>
+    </div>
+</div>
+
+<script>
+let pieChart, lineChart;
+
+function calcular() {
+    const capitalInicial = parseFloat(document.getElementById('capitalInicial').value) || 0;
+    const edad = parseInt(document.getElementById('edad').value) || 0;
+    const interes = (parseFloat(document.getElementById('interes').value) || 0) / 100;
+    const aportacionMensual = parseFloat(document.getElementById('aportacion').value) || 0;
+
+    const edadObjetivo = 65;
+    const años = edadObjetivo - edad;
+    if (años <= 0) return;
+
+    let capital = capitalInicial;
+    let totalAportado = capitalInicial;
+    let evolucion = [];
+    let labels = [];
+
+    for (let i = 1; i <= años; i++) {
+        capital += aportacionMensual * 12;
+        totalAportado += aportacionMensual * 12;
+        capital *= (1 + interes);
+        evolucion.push(capital.toFixed(2));
+        labels.push(edad + i);
+    }
+
+    const capitalFinal = capital;
+    const totalIntereses = capitalFinal - totalAportado;
+
+    document.getElementById('totalInvertido').textContent = totalAportado.toFixed(2);
+    document.getElementById('totalIntereses').textContent = totalIntereses.toFixed(2);
+    document.getElementById('capitalFinal').textContent = capitalFinal.toFixed(2);
+
+    actualizarGraficos(totalAportado, totalIntereses, labels, evolucion);
+}
+
+function actualizarGraficos(totalAportado, totalIntereses, labels, evolucion) {
+
+    if (pieChart) pieChart.destroy();
+    if (lineChart) lineChart.destroy();
+
+    const ctxPie = document.getElementById('pieChart').getContext('2d');
+    pieChart = new Chart(ctxPie, {
+        type: 'pie',
+        data: {
+            labels: ['Aportado', 'Intereses'],
+            datasets: [{
+                data: [totalAportado, totalIntereses]
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+
+    const ctxLine = document.getElementById('lineChart').getContext('2d');
+    lineChart = new Chart(ctxLine, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Evolución del capital (€)',
+                data: evolucion,
+                fill: false,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+}
+
+document.querySelectorAll("input").forEach(input => {
+    input.addEventListener("input", calcular);
+});
+
+calcular();
+</script>
+
+</body>
+</html>
